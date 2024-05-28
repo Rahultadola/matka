@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <link rel="stylesheet" href="/style.css" />
+    <title>Matka-rt-</title>
+
+
+    <link rel="manifest" href="/manifest.json" />
+    <!-- ios support -->
+    <link rel="apple-touch-icon" href="icon-72x72.png" />
+    <link rel="apple-touch-icon" href="icon-96x96.png" />
+    <link rel="apple-touch-icon" href="icon-128x128.png" />
+    <link rel="apple-touch-icon" href="icon-144x144.png" />
+    <link rel="apple-touch-icon" href="icon-152x152.png" />
+    <link rel="apple-touch-icon" href="icon-192x192.png" />
+    <link rel="apple-touch-icon" href="icon-384x384.png" />
+    <link rel="apple-touch-icon" href="icon-512x512.png" />
+    <meta name="apple-mobile-web-app-status-bar" content="#db4938" />
+    <meta name="theme-color" content="#db4938" />
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5032879587432045"
+     crossorigin="anonymous"></script>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div  id="anonymus-user-header" >
+          <h1><a href="/" style="text-decoration: none; color: inherit;">-rt-</a></h1>
+          <ul>
+            <li><a class="nav-link" href="/#login-page">Login</a></li>
+            <li><a class="nav-link" href="/#register-page">Register</a></li>
+          </ul>
+        </div>
+      </header>
+
+      <div id="contents">
+        <div id="overlayContent" style="display:none;transition: .5s;"></div>
+
+        <div class="container">
+          <div id="login">
+            <h1 class="card--title form-title">Welcome Back!</h1>
+            <form id="login-form">
+              <h1 class="card--title form-heading">Please login</h1>
+              <div class="inputs">
+                <label for="mobile">Mobile Number (+91):</label>
+                <input id="mobile" type="number" maxlength="10" minlength="10" placeholder="10 digit mobile number" required/>
+              </div> 
+              <div class="inputs">
+                <label for="pass">Password :</label>
+                <input id="pass" type="password" placeholder="*******" required/>
+              </div>
+              
+              <input id="lg-submit" type="submit" value="Login" />            
+              <div class="inputs">
+                <a class="small-links" href="/#forgot-password">Forgot Password ?</a>
+              </div>
+
+              <div class="form-footer">
+                <p>Don't have an account? <a class="small-links" href="/#register-page"><span>Sign Up</span></a></p>
+                <p>Need help? Call us at <span class="small-links">+917869997682</span></p>
+              </div>
+            </form>            
+          </div>
+
+          <div id="register" style="display: none;">
+            <h1 class="card--title form-title">Create New Account!</h1>
+            <form id="register-form" class="card">
+              <h1 class="card--title form-heading">Please Register Yourself</h1>
+              
+              <div class="inputs">
+                <label for="register-username">Username:</label>
+                <input id="register-username" type="text" placeholder="matka_king" required/>
+              </div> 
+
+              <div class="inputs">
+                <label for="register-mobile">Mobile number (+91):</label>
+                <input id="register-mobile" type="number" maxlength="10" minlength="10" placeholder="10 digit mobile number" required/>
+              </div> 
+
+              <div class="inputs">
+                <label for="register-pass">Password :</label>
+                <input id="register-pass" type="password" placeholder="*******" required/>
+              </div>
+              <input id="rg-submit" type=submit value="Register" />
+
+              <div class="form-footer">
+                <p>Already have an account? <a class="small-links" href="/#login-page"><span>Login</span></a></p>
+              </div>
+            </form>
+            
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </body>{% csrf_token %}
+  <script type="module" crossorigin="anonymous" src="/app.js"></script>
+</html>

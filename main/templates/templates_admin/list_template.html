@@ -1,0 +1,227 @@
+{% extends 'admin.html' %}
+
+{% block title %}Master Settings{% endblock title %}
+
+
+
+{% block custom_css %}
+<style type="text/css">
+    
+
+    table {
+        background-color: #f0f8ffc2;
+        padding: 1rem;
+        text-align: center;
+    }
+
+    thead {
+        background-color: #f0f8ffc2;
+    }
+
+    th {
+        padding: 0.2rem;
+    }
+
+    .action-head {
+        display: flex; width: 100px; justify-content: space-evenly;margin: auto;
+    }
+
+    .action-head button {
+      border: none;
+      border-radius: 5px;
+      padding: 0.2rem;
+      margin: 0.2rem;
+      color: white;
+    }
+
+    .delete-btn { background-color: #ff000099; }
+    .update-btn { background-color: #0000ff99; }
+    .pagination { width: fit-content; margin: auto; padding: 0.5rem;}
+
+</style>
+{% endblock custom_css %}
+
+
+
+
+{% block content %}
+    
+    {% csrf_token %}
+    <h2 style="width: 100%;margin:auto;text-align: center;color: #1e1a1a">{{ page_title }}</h2>
+    <button id="add-item" style="display: block; margin: 1rem auto; padding: 0.25rem;">Add Item</button>
+    <script type="text/javascript">
+        window.addEventListener('load', () => {
+            
+        });
+    </script>
+
+
+    <table id='table_id' style="max-width: 920px;margin: auto;width: 100vw;">
+        <thead>
+            <!-- ['#', 'Support Number', 'action', ] -->
+            <tr>
+                {% for key, value in view_config.items  %}
+                    <th scope="col" data-mkey="{{ key }}">{{ value }}</th>
+                {% endfor %}
+                    <th scope="col">Action </th>
+            </tr>
+        </thead>
+        <tbody>
+        	{% for obj in object_list %}
+                <tr>
+                    {% for key, value in obj.items %}
+                        <td>{{ value }}</td>
+                    {% endfor %}
+                        <td class="action-head">
+                            <button class="delete-btn">Delete</button>
+                            <button class="update-btn">Update</button>
+                        </td>              
+                </tr>                
+            {% empty %}
+				<tr><td colspan="{{ view_config.items|length }}"style="text-align: center;">No object found.</td></tr>
+			{% endfor %}
+        </tbody>
+    </table>
+    <div class="pagination">
+        <span class="step-links">
+            {% if page_obj.has_previous %}
+                <a href="?page=1">&laquo; first</a>
+                <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+            {% endif %}
+
+            <span class="current">
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+            </span>
+
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}">next</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+            {% endif %}
+        </span>
+    </div>
+    <script type="text/javascript">
+        window.addEventListener('load', () => {
+            function getCookie(name) {
+              let cookieValue = null;
+              if (document.cookie && document.cookie !== '') {
+                  const cookies = document.cookie.split(';');
+                  for (let i = 0; i < cookies.length; i++) {
+                      const cookie = cookies[i].trim();
+                      // Does this cookie string begin with the name we want?
+                      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                          break;
+                      }
+                  }
+              }
+              return cookieValue;
+            }
+
+            function fetchServer(type, url, body) {
+                fetch(`${window.location.href + url }`, {
+                        method: type,
+                        body: JSON.stringify(body),
+                        headers: {
+                          "Content-type": "application/x-www-form-urlencoded",
+                          'X-CSRFToken': getCookie('csrftoken')
+                        },
+                        mode: 'same-origin'
+                    }).then((res) => res.json()).then((response) => {
+                      if (response.success){
+                        alert("Record updated!")
+                        window.location.reload()
+                      }
+
+                      if (response.error) {
+                        alert(response.error)
+                      }
+                }).catch((err) => {
+                  alert(err);
+                })
+            }
+
+            function getTableHeaders(targetTable) {
+                return Array.from(targetTable.children[0].children[0].children).map((th) => th.innerHTML)
+            }
+
+
+            function getTableInputKeys() {
+                const arr = Array.from(document.getElementById('table_id').children[0].children[0].children)
+                return arr.map((th) => th.getAttribute('data-mkey')).slice(0 , arr.length-1)
+            }
+
+            
+            function generateForm(formItems, formType='new', data=[]) {
+                return (`<td>${data.length > 0 ? data[0] : formItems[0]}</td>
+                    ${ formItems.slice(1, formItems.length-1).map((hd, ind) => `<td>
+                        <input style="width: 100px;" value="${ ind < data.length ? data[ind + 1] : ''}" />
+                    </td>`).join('') }
+                    <td><input id="${formType}ItemForm"  type="submit" value="${ formType === 'new' ? 'Add': 'Update'}"/></td>
+                `);
+            }
+
+            function handleTableActions(targetTable, eventType, type, url) {
+                document.getElementById(`${eventType}ItemForm`).addEventListener('click', (ev) => { 
+                    // const inputKeys = tableHeaders.slice(1, tableHeaders.length -1).map((hd) => hd.toLowerCase().split(' ').join('_'))
+                    const inputKeys = getTableInputKeys(targetTable)
+                    console.log(inputKeys)
+                    const formItems = Array.from(ev.target.parentElement.parentElement.children)
+                    const inputValues = formItems.slice(1, formItems.length -1).map((td) => td.children[0].value)
+                    
+                    var formBody = { id: formItems[0].innerHTML }
+                    for (let index in inputKeys) {
+                        if(index > 0){
+                            formBody[inputKeys[index]] = inputValues[index - 1]
+                        }
+                    }
+                    console.log(formBody)
+                    fetchServer(type, url, formBody)
+                });
+            };
+
+            document.getElementById('add-item').addEventListener('click', (ev) => {
+                console.log('Button Clicked!')     
+                const targetTable = document.getElementById('table_id');
+                const tableHeaders = getTableHeaders(targetTable);
+                const eventType = 'new';
+
+                const newRow = document.createElement('tr')
+                newRow.id = 'newFormRow';
+                newRow.innerHTML = generateForm(tableHeaders, eventType, [])
+                
+                if( !targetTable.children[1].contains(document.getElementById('newFormRow'))) {
+                    targetTable.children[1].append(newRow)
+                    handleTableActions(targetTable, eventType, 'POST', 'add-new')
+                }
+
+            });
+
+
+            document.querySelectorAll('.delete-btn').forEach((btn) => {
+                btn.addEventListener('click', (ev) => {
+                    console.log('delete-btn Clicked!');
+                    const rowID = ev.target.parentElement.parentElement.children[0].innerHTML                                    
+                    fetchServer('DELETE', 'delete', { id: rowID }) 
+                })
+            })
+
+            document.querySelectorAll('.update-btn').forEach((btn) => {
+                btn.addEventListener('click', (ev) => {
+                    console.log('update-btn Clicked!');
+                    const targetRow = ev.target.parentElement.parentElement;
+                    const targetTable = targetRow.parentElement.parentElement;
+                    const tableHeaders = getTableHeaders(targetTable)
+                    const rowData = Array.from(targetRow.children)
+                    const rowOldData = rowData.slice(0, rowData.length -1).map((td) => td.innerHTML);
+
+                    const eventType = 'update';
+                    targetRow.innerHTML = generateForm(tableHeaders, eventType, rowOldData);
+
+                    handleTableActions(targetTable, eventType, 'POST', 'update')
+                })
+            })
+        })
+    </script>                    
+    {% block news_and_update %}{% endblock news_and_update %}
+
+{% endblock content %}

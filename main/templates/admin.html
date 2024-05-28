@@ -1,0 +1,250 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- <link rel="stylesheet" href="/style.css" /> -->
+    <title>
+      {% block title %}{% endblock title %}-rt-</title>
+
+     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5032879587432045"
+     crossorigin="anonymous"></script>
+  </head>
+
+  <style>
+    
+    @import url("https://fonts.googleapis.com/css?family=Nunito:400,700&display=swap");
+
+
+	/* width */
+	::-webkit-scrollbar {
+	  width: 1px;
+	}
+
+	/* Track */
+	::-webkit-scrollbar-track {
+	  box-shadow: inset 0 0 1px #e74c3c00; 
+	  border-radius: 1px;
+	}
+	 
+	/* Handle */
+	::-webkit-scrollbar-thumb {
+	  background: #e74c3caa; 
+	  border-radius: 1px;
+	}
+
+	/* Handle on hover */
+	::-webkit-scrollbar-thumb:hover {
+	  background: #e74c3c; 
+	}
+
+
+	* {
+	  margin: 0;
+	  padding: 0;
+	  box-sizing: border-box;
+	}
+	body {
+	  height: 100vh;
+	  font-size: 1rem;
+	  font-family: "Nunito", sans-serif;  
+	  background: url('/back_001.jpeg');
+	  background-repeat: no-repeat;
+	  background-position: center;
+	  background-size: cover;  
+	  background-attachment: fixed;
+		background-color: #bbb;
+	  	background-blend-mode: overlay;
+	}
+	main {
+	  max-width: 900px;
+	  margin: auto;
+	  text-align: center;
+	}
+
+	header {
+	  position: sticky;
+	  top: 0;
+	  background: #1e1a1a;
+	  padding: 0.5rem;
+	}
+
+	ul {
+	  list-style: none;
+	  display: flex;
+	}
+
+	h1 {
+	  color: #e74c3c;
+	}
+
+	header ul li{
+		width: min-content;
+		min-width: 5vw;
+		margin: auto 5px;
+		text-align: center;
+	}
+	header ul li a {
+/*	  text-transform: full-width uppercase;*/
+	  text-decoration: none;
+	  color: #e74b3c;
+	  border-radius: 10px;
+	}
+
+    #link-container-toggler{
+    	display: none;
+    	background: #0000;
+    	padding: 0;
+    }
+
+    .container {
+    	max-width: 1080px;
+        margin: auto;
+        width: 100vw;
+        overflow-x: scroll;
+    }
+
+tr:nth-child(even), th:nth-child(even), td:nth-child(even) {
+  background-color: #88dddd8d;
+}
+
+
+.card {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  width: 20rem;
+  height: auto;
+  background: #fcfcfcdd;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
+  border-radius: 10px;
+  margin: auto;
+  overflow: hidden;
+  padding: 1rem;  
+}
+
+@media only screen and (max-width: 640px) {
+	.card {
+		width: 90vw;
+	}
+}
+  </style>
+
+  {% if request.user.is_authenticated %}
+	  {% if request.user.is_admin %}
+		  {% block custom_css %}
+		  {% endblock custom_css %}
+
+		  <body >
+		    <header>
+		    	
+		    	<div style="display: flex;">
+		    		<div style="display: flex; width: 100%; justify-content: space-around; align-items: center;">
+				        <a href="/admin-dashboard/" style="text-decoration: none;"><h1>-rt-</h1></a>
+				        <a href="javascript:void(0)" id="link-container-toggler" style="border: none; padding: 5px;">
+				        	<svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="50" height="30" viewBox="0 0 48 48">
+										<path fill="none" stroke="#e74c3c" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="2" d="M36.1,7.5h2.4c1.1,0,2,0.9,2,2v3c0,1.1-0.9,2-2,2H18"></path>
+										<path fill="none" stroke="#e74c3c" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="2" d="M13,14.5H9.5c-1.1,0-2-0.9-2-2v-3c0-1.1,0.9-2,2-2h21.3"></path>
+										<path fill="none" stroke="#e74c3c" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="2" d="M13.3,27.5H9.5c-1.1,0-2-0.9-2-2v-3c0-1.1,0.9-2,2-2h20"></path>
+										<path fill="none" stroke="#e74c3c" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="2" d="M35,20.5h3.5c1.1,0,2,0.9,2,2v3c0,1.1-0.9,2-2,2h-20"></path>
+										<path fill="none" stroke="#e74c3c" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="2" d="M13.5,40.5h-4c-1.1,0-2-0.9-2-2v-3c0-1.1,0.9-2,2-2h19.6"></path>
+										<path fill="none" stroke="#e74c3c" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="2" d="M34.2,33.5h4.3c1.1,0,2,0.9,2,2v3c0,1.1-0.9,2-2,2h-20"></path>
+									</svg>
+				        </a>
+				    </div>    
+			        <ul id="head-links-container"></ul>              
+		        </div>
+
+		    </header>
+		    <div id="page-title"></div>
+		    <div  class="container">
+				{% block content %}
+				{% endblock content %}
+		  	</div>
+		
+		  	{{ summary|json_script:'summary' }}
+		  	{{ admin_links|json_script:'admin-links'}}
+		  	
+				<script type="text/javascript">
+					function handleLayout() {
+						const menuIcon = document.querySelector('#link-container-toggler');
+						const linkContainer = document.querySelector('#head-links-container');
+
+
+						const adm_links = ['Master Settings', 'Time Master', 'Result Page', 'Rate Settings', 'Game History','Reverse Game Result', 'Game Cancel Option', 'News And Update', 'RKD Running Game', 'Balance Check', 'User Master', 'Buy Chips', 'Sell Chips', 'Deposite Report', 'Withdraw Report'];
+						const adm_links2 = JSON.parse(document.getElementById('admin-links').textContent)
+						console.log(adm_links2)
+
+						html_str = adm_links2.map((link) => (`<li class="nav-item"><a class="nav-link" href="${ window.location.origin +'/'+ window.location.pathname.split('/')[1]+'/'}${link.split(' ').map((str) => str.split().map((ch) => ch.toLowerCase()).join('')).join('-')}">${link}</a></li>`));
+
+						linkContainer.innerHTML = html_str.join('')
+						linkContainer.innerHTML += `<li class="nav-item"><a class="nav-link" href="${window.location.origin +'/'+ window.location.pathname.split('/')[1] +'/'+ 'logout/'}">Logout</a></li>`;
+
+
+						menuIcon.addEventListener('click', (ev) => {
+							if (linkContainer.style.display === 'none') {
+					  			document.querySelector('header').children[0].style.flexDirection = 'column';
+					  			linkContainer.style.display = 'flex';
+					  			linkContainer.style.flexDirection = 'column';
+
+					  			Array.from(linkContainer.children).forEach((ch) => {
+					  				ch.style.width = 'auto';
+					  				ch.style.margin = '0.5rem'
+					  			});
+							} else {
+								document.querySelector('header').children[0].style.flexDirection = 'row';
+					  			linkContainer.style.display = 'none';
+					  			linkContainer.style.flexDirection = 'column';
+							}
+						})
+						
+							
+						if (document.querySelector('body').scrollWidth < 1280) {
+							menuIcon.style.display = 'block';
+							linkContainer.style.display = 'none';
+						} else {
+							linkContainer.style.flexDirection = 'row';
+							document.querySelector('header').children[0].style.flexDirection = 'row';
+							menuIcon.style.display = 'none';
+							linkContainer.style.display = 'flex';
+						}
+
+						///	adding admin dashboard content to DOM
+						const cont = document.querySelector('.container');
+						if (window.location.pathname === '/admin-dashboard/' && !cont.contains(document.querySelector('.card'))) {
+							cont.style.display = 'grid';
+							cont.style.gridTemplateColumns = 'repeat(auto-fit, minmax(20rem, 1fr))';
+							cont.style.gridGap = '1rem';
+							cont.style.justifyContent = 'center';
+							cont.style.alignItems = 'center';
+							cont.style.padding = '1rem 0 3rem 0';
+	
+							const summ = JSON.parse(document.getElementById('summary').textContent)
+							// console.log(summ)
+			  			for (let item in summ) {
+			  				const detail_card	= `<div class="card">
+				  				<h3 class="sl-title">${item.split('_').map((w) => w[0].toUpperCase() + w.slice(1, w.length)).join(' ')}</h3>
+				  				<hr style="margin-top:0.25rem;box-shadow: 0px -3px 5px #bbb;">
+				  				<div class="result">${summ[item]}</div>
+				  				<hr style="margin-bottom:0.25rem;box-shadow: 0px 3px 5px #bbb;">
+				  			</div>`;
+	
+				  			document.querySelector('.container').innerHTML += detail_card
+			  			}
+		  				//dashbord code ends here						
+						}
+					}
+
+					window.onload = handleLayout;
+					window.onresize = handleLayout;
+					
+				</script>
+
+				{% block js %}	{% endblock js %}
+
+			</body>
+
+		{% endif %}
+	{% endif %}
+</html>
