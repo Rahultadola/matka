@@ -4,12 +4,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- <link rel="stylesheet" href="/style.css" /> -->
-    <title>
-      {% block title %}{% endblock title %}-rt-</title>
-
-     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5032879587432045"
-     crossorigin="anonymous"></script>
+    <title>{% block title %}{% endblock title %}-rt-</title>
   </head>
 
   <style>
@@ -174,7 +169,7 @@ tr:nth-child(even), th:nth-child(even), td:nth-child(even) {
 
 						const adm_links = ['Master Settings', 'Time Master', 'Result Page', 'Rate Settings', 'Game History','Reverse Game Result', 'Game Cancel Option', 'News And Update', 'RKD Running Game', 'Balance Check', 'User Master', 'Buy Chips', 'Sell Chips', 'Deposite Report', 'Withdraw Report'];
 						const adm_links2 = JSON.parse(document.getElementById('admin-links').textContent)
-						console.log(adm_links2)
+						// console.log(adm_links2)
 
 						html_str = adm_links2.map((link) => (`<li class="nav-item"><a class="nav-link" href="${ window.location.origin +'/'+ window.location.pathname.split('/')[1]+'/'}${link.split(' ').map((str) => str.split().map((ch) => ch.toLowerCase()).join('')).join('-')}">${link}</a></li>`));
 

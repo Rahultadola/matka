@@ -35,9 +35,7 @@ export const loginHandler = () => {
     
     
     if (buttonClickCount === 0) {
-      buttonClickCount = buttonClickCount + 1
-      debugger
-      
+      buttonClickCount = buttonClickCount + 1      
       const submitBtn = document.getElementById('lg-submit');
       submitBtn.setAttribute('disabled', true);
 
@@ -62,15 +60,12 @@ export const loginHandler = () => {
 
           if (response.error) {
             container.innerHTML = response.error
-            return false
           }
         }).catch((err) => {
-          container.innerHTML = 'Login failed! retry.'
-          return false
+          alert('Login failed! retry.')
+          window.location.href = ''
         })
-
       container.innerHTML = "Loading resources...";
-
     }
   });  
 };
@@ -127,7 +122,7 @@ export const initRegisterPage = (setlogin) => {
           }
         }).catch((err) => {
           container.innerHTML = 'Registration failed! retry.'
-          return false
+          window.location.hash='/#register-page'
         })
 
       container.innerHTML = "Loading resources..."

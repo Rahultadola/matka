@@ -5,7 +5,8 @@ import { bet_formHandler, bid_submitHandler } from '/events.js';
 import { 
   gamePageHTML, 
   bet_formHTML, 
-  bet_pageHTML,
+  bidHistoryHTML,
+  win_betHTML,
   rulesPageHTML, 
   fundOptionHTML,
   money_formHTML,
@@ -26,7 +27,7 @@ const overlay = document.getElementById('overlayContent');
 const game_status_slogen = ['Betting Closed for Today', 'Running for close', 'Running Now'];
 
 
-export const initBetFormHandler = (bets, user, wallet_balance, bet_types) => {
+export const initBetFormHandler = (bets, user, wallet_balance, bet_types, star_line_today) => {
   const gameList = document.getElementById('game-list');
   for ( let link of gameList.children) {
     if ( link.getAttribute('href').slice(1) === window.location.hash) {
@@ -68,36 +69,61 @@ export const initBetFormHandler = (bets, user, wallet_balance, bet_types) => {
   }
 
   const curr_betType = bet_types.filter((bt) => bt.title === queryParams[1][1])[0];
+  const curr_starLine = star_line_today.filter((sl) => sl.name === decodeURIComponent(queryParams[0][1]))[0];
 
-  container.innerHTML = bet_formHTML(bets, queryParams[0][1], curr_betType, wallet_balance);
+  
+  function resolveTime(ts) {
+    const tt = ts.split(':');
+    let th = parseInt(tt[0])
+    const tm = parseInt(tt[1].slice(0,2))
+    const tf = tt[1].slice(2,).trim().toLocaleUpperCase()
+
+    if (tf === 'PM' && th < 12 ) {
+      th += 12 
+    }
+    
+    const dd = new Date();
+    dd.setHours(th);
+    dd.setMinutes(tm)
+    dd.setSeconds(0)
+
+    return dd
+  }
+
+  const canBidOpen = (new Date() - resolveTime(curr_starLine.open_bid_last_time)) < 0 ? true : false;
+  const canBidClose = (new Date() - resolveTime(curr_starLine.close_bid_last_time)) < 0 ? true : false;
+
+  container.innerHTML = bet_formHTML(bets, queryParams[0][1], curr_betType, wallet_balance, canBidOpen, canBidClose);
   addEventListenerForTableRemoveBtn();
 
-  document.getElementById('bet-form').digit.addEventListener('input', (ev) => {
-    ev.target.value = ev.target.value.split('').slice(0, parseInt(curr_betType.digit_count)).join('');
-  });
+  if ( canBidOpen || canBidClose) {
+    document.getElementById('bet-form').digit.addEventListener('input', (ev) => {
+      ev.target.value = ev.target.value.split('').slice(0, parseInt(curr_betType.digit_count)).join('');
+    });
 
-  document.getElementById('bet-form').amount.addEventListener('input', (ev) => {
-    if (parseInt(ev.target.value) > parseInt(wallet_balance)) {
-      ev.target.value = ev.target.value.split('').slice(0, ev.target.value.length - 1).join('');
-    }
-  });
+    document.getElementById('bet-form').amount.addEventListener('input', (ev) => {
+      if (parseInt(ev.target.value) > parseInt(wallet_balance)) {
+        ev.target.value = ev.target.value.split('').slice(0, ev.target.value.length - 1).join('');
+      }
+    });
 
-  document.getElementById('bet-form').addEventListener('submit', (ev) => {
-    bets.push({
-      game: decodeURIComponent(queryParams[0][1]),
-      bidType: decodeURIComponent(queryParams[1][1]),
-      ...bet_formHandler(ev)
-    })
+    document.getElementById('bet-form').addEventListener('submit', (ev) => {
+      bets.push({
+        game: decodeURIComponent(queryParams[0][1]),
+        bidType: decodeURIComponent(queryParams[1][1]),
+        ...bet_formHandler(ev)
+      })
 
-    ev.target.digit.value = '';
-    ev.target.amount.value = '';
+      ev.target.digit.value = '';
+      ev.target.amount.value = '';
 
-    addEventListenerForTableRemoveBtn();    
-  });
+      addEventListenerForTableRemoveBtn();    
+    });
 
-  document.getElementById('bid-submit-btn').addEventListener('click', (ev) => {
-    bid_submitHandler(container, bets);
-  });
+    document.getElementById('bid-submit-btn').addEventListener('click', (ev) => {
+      bid_submitHandler(container, bets);
+    });
+  }
 };
 
 
@@ -137,24 +163,30 @@ export const initGamesPage = (games, betTypes, admin) => {
   for (var slGame of activeGames) {
     slGame.addEventListener('click', (ev) => {
       let targetPlayButton = ev.target;
-
+      
       if( ev.target.tagName === "SPAN"){
         targetPlayButton = ev.target.parentElement
       }
 
       if( ev.target.tagName === "path" || ev.target.tagName === "g"){
-        targetPlayButton = ev.target.ownerSVGElement.parentElement
+        targetPlayButton = ev.target.ownerSVGElement.parentElement;
       }
-      
+
+      if( ev.target.tagName === "svg"){
+        targetPlayButton = ev.target.parentElement;
+      }
+
+            
       // console.log(targetPlayButton.getAttribute('data-slname'), targetPlayButton.getAttribute('data-slopen'), targetPlayButton.getAttribute('data-slclose'));
 
       const game = decodeURIComponent(targetPlayButton.getAttribute('data-slname'))
       output = '';
       if(game != null) {
         const betHTML_List = betTypes.map((type, i) => (`
-          <a href="/#bet-form?game=${encodeURI(targetPlayButton.getAttribute('data-slname'))}&type=${encodeURI(type.title)}" 
-            <img src="" />
+          <a href="/#bet-form?game=${encodeURI(targetPlayButton.getAttribute('data-slname'))}&type=${encodeURI(type.title)}" >
+            <img src="/${type.title.toLowerCase().split(' ').join('-')}.png" alt="${type.title[0]}" style="width: auto; max-width: 1.5rem; height: auto; max-height: 1.5rem;" />
             <span>${type.title}</span>
+            <img src="/${type.title.toLowerCase().split(' ').join('-')}.png" alt="${type.title[0]}" style="width: auto; max-width: 1.5rem; height: auto; max-height: 1.5rem;" />
           </a>`));
 
         overlay.innerHTML = `<h2>${game}</h2><div id="game-list" class="game-type-list">${betHTML_List.join('')}</div>`;
@@ -169,11 +201,11 @@ export const initGamesPage = (games, betTypes, admin) => {
 
 
 
-export const initBetsPage = (user, bidDetails) => {
-  const bid_HTML_List = bidDetails.bids.map(bet_pageHTML)
+export const initBidHistoryPage = (user, bids) => {
+  const bid_HTML_List = bids.map(bidHistoryHTML)
   container.innerHTML = bid_HTML_List.join('')
 
-  if (bidDetails.bids.length === 0) {
+  if (bids.length === 0) {
     container.innerHTML = `<h3>Enjoy playing have fun<br>Play Daily, Win Daily<br>No games played yet.</h3>`
   }
   console.log('Bets added.')
@@ -181,7 +213,7 @@ export const initBetsPage = (user, bidDetails) => {
 
 
 export const initWinHistoryPage = (wonBets) => {
-  const bid_HTML_List = wonBets.map(bet_pageHTML)
+  const bid_HTML_List = wonBets.map(win_betHTML)
   container.innerHTML = bid_HTML_List.join('')
 
   if (wonBets.length === 0) {
@@ -192,37 +224,43 @@ export const initWinHistoryPage = (wonBets) => {
 
 
 
-export const initFundsPage = () => {
+export const initFundsPage = (balance) => {
   const options = [
     {
       title: 'Add Fund',
       description: 'Add fund to wallet before bidding',
-      action: 'deposite-fund'
+      action: 'deposite-fund',
+      img: '/add_funds.png'
     },
     {
       title: 'Withdraw Fund', 
       description: 'Withdraw your winning amounts',
-      action: 'withdraw-fund'
+      action: 'withdraw-fund',
+      img: '/withdraw.png'
     },
     {
       title: 'Add Bank Details',
       description: 'Add bank details for withdrawl',
-      action: 'add-bankdetails'
+      action: 'add-bankdetails',
+      img: '/bank.png'
     },
     {
       title: 'Fund Deposite History',
       description: 'See your entire deposite history',
-      action: 'deposite-history'
+      action: 'deposite-history',
+      img: '/fund_history.png'
     },
     {
       title: 'Fund Withdraw History',
       description:'See your entire withdraw history',
-      action: 'withdraw-history'
+      action: 'withdraw-history',
+      img: '/fund_history.png'
     }
   ]
 
   const opts = options.map(fundOptionHTML)
-  container.innerHTML = opts.join(' ')
+  container.innerHTML = `<h2 style="color: #1e1a1a;">Wallet Balance: &#x20b9;${balance}</h2>`;
+  container.innerHTML += opts.join(' ')
 
 };
 
@@ -232,11 +270,13 @@ export const initFundRequestPage = (reqType, totalAmount) => {
   const depositeSuccessMessage = '<h3>Request placed successfully!<br>You can pay via any method and contact admin</h3>'
   const withdrawSuccessMessage = '<h3>Request placed successfully!<br>You will recieve payment contact admin</h3>'
 
-  container.innerHTML = `<div class="fund-detail">
-    <h2>Balance : &#x20b9; ${totalAmount}</h2>
-  </div>`;
+  container.innerHTML = `<h3>${ reqType.split('').map((a, i) => i === 0 ? a.toUpperCase(): a).join('') } Page</h3>
+    <h2 style="margin-bottom: 5rem;">${reqType === 'deposite' ? 'Waiting' : 'Available' } Amount: &#x20b9;${totalAmount}</h2>
+    `;
 
   const fundReqForm = document.createElement('form');
+  fundReqForm.style.width = '70%';
+  fundReqForm.style.maxWidth = '420px';
   fundReqForm.id = `${reqType}-form`;
   fundReqForm.innerHTML = money_formHTML(reqType);
 
@@ -250,7 +290,7 @@ export const initFundRequestPage = (reqType, totalAmount) => {
     const body = { amount: inputAmount }
     const successHash = `#funds-page?action=${reqType}-history`;
     const successMessage = `${reqType === 'deposite' ? depositeSuccessMessage : withdrawSuccessMessage }`
-    // console.log(successHash, successMessage)
+    console.log(successHash, successMessage)
     httpPostRequest(url, body, successHash, successMessage)
   })
 };
@@ -258,11 +298,11 @@ export const initFundRequestPage = (reqType, totalAmount) => {
 
 
 export const initFundHistoryPage = (type, trans) => {
-  overlay.innerHTML = `<h3>Fund ${type === 'd'? 'Deposite' : 'Withdraw'} History</h3>`;
-  container.innerHTML = trans.map(transactionEntryHTML).join('');
+  container.innerHTML = `<h3>Fund ${type === 'd'? 'Deposite' : 'Withdraw'} History</h3>`;
+  container.innerHTML += trans.map(transactionEntryHTML).join('');
 
   if (trans.length === 0) {
-    container.innerHTML += '<h3>Waiting for your action,<br>No history found</h3>'
+    container.innerHTML += '<h3>Waiting for your action<br>No history found</h3>'
   }
 };
 

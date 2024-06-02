@@ -41,12 +41,6 @@ export const httpPostRequest = (url, boody, successHash, successMessage) => {
               overlay.style.display = 'none'; 
               window.location.hash = successHash;
             }, 1500)
-
-            // setTimeout(() => {
-            // 	if (successHash){
-	              
-            // 	}
-            // }, 2000)
           }
 
           if (response.error) {

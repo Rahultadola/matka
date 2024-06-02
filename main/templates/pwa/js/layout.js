@@ -13,17 +13,17 @@ export const navLinkDecoration = () => {
   }
 };
 
-export function toggleHeader(balance, admin) {
-  const hash = window.location.hash
-  const header = document.querySelector('header');
-  if(!header.contains(document.getElementById('login-user-header'))) {
-    const newHeader = document.createElement('div')
-    newHeader.id = 'login-user-header';
-    newHeader.innerHTML = loginHeader;
-    header.replaceChild(newHeader, document.querySelector('header').children[0]);
-    document.getElementById('wallet-balance').innerHTML = `${balance}`;
-  }
+export function toggleHeader() {
   
+  const header = document.querySelector('header');
+  const newHeader = document.createElement('div')
+  newHeader.id = 'login-user-header';
+  newHeader.innerHTML = loginHeader;
+  header.replaceChild(newHeader, document.querySelector('header').children[0]);  
+}
+
+export function handleLayouts(admin) {
+  const hash = window.location.hash;
   const container = document.querySelector(".container")
   container.innerHTML = "Loading resources..."
 
@@ -46,7 +46,7 @@ export function toggleHeader(balance, admin) {
 
   if ( hash === '#rules-page') {
     container.style.gridTemplateColumns = "auto";
-  } else if ( hash.slice(0,11) === '#funds-page' || hash.slice(0,9) === '#bet-form') {
+  } else if ( hash.slice(0,11) === '#funds-page' || hash.slice(0,9) === '#bet-form' || hash === '#bets-page'|| hash === '#win-history-page') {
     container.style.gridTemplateColumns = "1fr";
     container.style.marginBottom = '3rem';
   } else {

@@ -1,17 +1,20 @@
+import json
+import datetime
+from django.utils import timezone  
+
 from django.shortcuts import render, redirect
 from django.contrib.auth import logout as _logout
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required  
-from django.views.generic.list import ListView
+
 from django.views import View
+from django.views.generic.list import ListView
 
 from django.http import JsonResponse
 
-from django.utils import timezone  
-from .models import MatkaAdmin, MatkaUser, StarLine, RKDBet, GameBetTypes, Wallet, Transaction
-import json
-
 from .admin import UserChangeForm, UserCreationForm
+from .models import MatkaAdmin, MatkaUser, StarLine, RKDBet, GameBetTypes, Wallet, Transaction
+
 
 
 admin_links = ['Master Settings', 'Time Master', 'Result Page', 'Rate Settings', 'Game History','Reverse Game Result', 'Game Cancel Option', 'News And Update', 'RKD Running Game', 'Balance Check', 'User Master', 'Buy Chips', 'Sell Chips', 'Deposite Report', 'Withdraw Report']
@@ -19,21 +22,23 @@ admin_links = ['Master Settings', 'Time Master', 'Result Page', 'Rate Settings',
 @login_required(login_url='/admin/login/')
 def admin_dashboard(request):
 	if request.user.is_admin:
+		aa = sum([a['amount'] for a in RKDBet.objects.filter(admin_processed=True).values()])
+		bb = sum([a['bid_win_amount'] for a in RKDBet.objects.filter(admin_processed=True, bid_won=True).values()])
 		context = {
 			'admin_links': admin_links,
 			'summary': {
-				'total_deposite_amount': sum([a['amount'] for a in Transaction.objects.filter(transaction_type="D", admin_check=True, paid=True).values()]), 	#	Total completed deposite transactions
+				'total_deposite_amount': sum([a['amount'] for a in Transaction.objects.filter(transaction_type="D", admin_check=True, paid=True).values('amount')]), 	#	Total completed deposite transactions
 				'total_pending_deposite_amount': sum([a['amount'] for a in Transaction.objects.filter(transaction_type="D", admin_check=False, paid=False).values()]),	#	Amount not checked by admin
 				'total_withdraw_amount': sum([a['amount'] for a in Transaction.objects.filter(transaction_type="W", admin_check=True, paid=True).values()]),	#	Total of completed withdraw transactions
 				'total_pending_withdraw_amount': sum([a['amount'] for a in Transaction.objects.filter(transaction_type="W", admin_check=False, paid=False).values()]),	#	amount not checked by admin
 
-				'total_completed_bid_amount': sum([a['amount'] for a in Transaction.objects.filter(transaction_type="D", admin_check=True, paid=True).values()]),	#	Total completed deposite transactions
-				'total_completed_win_amount': 0,
-				'total_completed_bid_win_diffrence': 0,
+				'total_completed_bid_amount': aa,	#	Total completed deposite transactions
+				'total_completed_win_amount': bb,
+				'total_completed_bid_win_diffrence': aa - bb,
 
-				'total_running_bid_amount': sum([a['amount'] for a in Transaction.objects.filter(transaction_type="D", admin_check=True, paid=True).values()]),	#	Total completed deposite transactions
-				'total_running_win_amount': 0,
-				'total_running_bid_win_diffrence': 0,
+				'total_running_bid_amount': sum([a['amount'] for a in RKDBet.objects.filter(is_active=True, admin_processed=False).values()]),	#	Total completed deposite transactions
+				# 'total_running_win_amount': 0,
+				# 'total_running_bid_win_diffrence': 0,
 
 				'total_users': len(MatkaUser.objects.filter(is_admin=False)),
 				'allowed_users': len(MatkaUser.objects.filter(is_admin=False, is_active=True)),
@@ -79,7 +84,7 @@ class BasicListView(LoginRequiredMixin, ListView):
 	admin_links = admin_links
 	paginate_by = 25
 	template_name = 'templates_admin/list_template.html'
-	boolean_keys = ['active_account', 'status_open','status_close', 'admin_check', 'bid_won', 'admin_processed', 'paid']
+
 
 	@property
 	def model_data_filters(self):
@@ -106,15 +111,20 @@ class BasicListView(LoginRequiredMixin, ListView):
 				filter_obj[f'{key}'] = f'{input_items[key]}'
 			else:
 				inp_obj[f'{key}'] = f'{input_items[key]}'
-			
-			if key in self.boolean_keys:
-				inp_obj[f'{key}'] = True if input_items[f'{key}'] == 'True' else False 
+
 		return inp_obj, filter_obj
 
 
 	def post(self, *args, **kwargs):
 		if self.request.user.is_admin :
 			inp_obj, filter_obj = self.gather_inputs(kwargs['operation'])
+
+			if hasattr(self.model, 'started_on') :
+				del inp_obj['started_on']
+
+			if hasattr(self.model, 'comleted_on') :
+				inp_obj['comleted_on'] = datetime.datetime.now()
+
 			# try:
 			obj = None
 			if kwargs['operation'] == 'add-new' and inp_obj['id'] == '#':
@@ -167,7 +177,7 @@ class MasterView(BasicListView, View):
 class TimeMaster(BasicListView):
 	model = StarLine
 	page_title = 'Time Master'
-	p_keys = ['id', 'name']
+	p_keys = ['id']
 	view_config = {
 		'id'				: '#',
 		'name'				: 'Name',
@@ -203,13 +213,13 @@ class ResultPage(BasicListView):
 class RateSetting(BasicListView):
 	model = GameBetTypes
 	page_title = 'Rate Settings'
-	p_keys = ['id', 'title']
+	p_keys = ['id']
 	view_config = {
 		'id': '#',
 		'title': 'Title',
 		'digit_count': 'Digit Count',
 		'unit_bet_amount': 'Unit Bet Amount',
-		'win_amount': 'Win Amoun' 
+		'win_amount': 'Win Amount' 
 	}
 
 
@@ -218,8 +228,8 @@ class RateSetting(BasicListView):
 class GameHistory(BasicListView):
 	model = RKDBet
 	page_title = 'Game History'
-	order_by = '-placed_on'
-	p_keys = ['id', 'user', 'game']
+	order_by = '-id'
+	p_keys = ['id', 'user', 'game', 'bid_type', 'bid_digit', 'amount']
 	view_config = {
 		'id': '#',
 		'user': 'User',
@@ -227,12 +237,18 @@ class GameHistory(BasicListView):
 		'bid_type': 'Bid Type',
 		'bid_digit': 'Bid Digit',
 		'amount': 'Amount',
-		'placed_on': 'Placed On',
-		'admin_check': 'Admin Check',
 		'bid_won': 'Bid Win',
+		'bid_win_amount': 'Win Amount',
+		'is_active': 'Bid Status',
+		'admin_check': 'Admin Check',
 		'admin_processed': 'Admin Processed',
-		'processed_on': 'Processed On'
+		'started_on': 'Placed On',
+		'comleted_on': 'Completed On'
 	}
+
+	def get_queryset(self):
+		return self.model.objects.filter(is_active=True, admin_processed=True).values(*self.model_data_filters)
+
 
 
 
@@ -240,7 +256,8 @@ class GameHistory(BasicListView):
 class ReverseGameResult(BasicListView):
 	model = RKDBet
 	page_title = 'Reverse Game Result'
-	p_keys = ['id', 'user', 'game']
+	order_by = '-id'
+	p_keys = ['id', 'user', 'game', 'game', 'bid_type', 'bid_digit', 'amount']
 	view_config = {
 		'id': '#',
 		'user': 'User',
@@ -248,42 +265,39 @@ class ReverseGameResult(BasicListView):
 		'bid_type': 'Bid Type',
 		'bid_digit': 'Bid Digit',
 		'amount': 'Amount',
-		'placed_on': 'Placed On',
-		'admin_check': 'Admin Check',
 		'bid_won': 'Bid Win',
-		'admin_processed': 'Admin Processed',
-		'processed_on': 'Processed On'
+		'bid_win_amount': 'Win Amount',
+		'admin_check': 'Admin Check',
+		'admin_processed': 'Admin Processed'
 	}
+
 
 
 class GameCancelOption(BasicListView):
 	model = RKDBet
 	page_title = 'Game Cancel Option'
-	p_keys = ['id', 'user', 'game']
+	order_by = '-id'
+	p_keys = ['id', 'user', 'game', 'bid_type', 'bid_digit', 'amount']
 	view_config = {
 		'id': '#',
 		'user': 'User',
 		'game': 'Game',
 		'bid_type': 'Bid Type',
 		'bid_digit': 'Bid Digit',
-		'is_active': 'Bid Status',
 		'amount': 'Amount',
-		'placed_on': 'Placed On',
-		'admin_check': 'Admin Check',
-		'bid_won': 'Bid Win',
-		'admin_processed': 'Admin Processed',
-		'processed_on': 'Processed On'
+		'is_active': 'Bid Status'
 	}
 
 	def get_queryset(self):
-		return self.model.objects.all().values(*self.model_data_filters)
+		return self.model.objects.filter(is_active=True, admin_processed=False).values(*self.model_data_filters)
 
 
 
 class RKDRunningGame(BasicListView):
 	model = RKDBet
 	page_title = 'RKD Running Game'
-	p_keys = ['id', 'user', 'game']
+	order_by = '-id'
+	p_keys = ['id', 'user', 'game', 'bid_type', 'bid_digit', 'amount']
 	view_config = view_config = {
 		'id': '#',
 		'user': 'User',
@@ -291,15 +305,14 @@ class RKDRunningGame(BasicListView):
 		'bid_type': 'Bid Type',
 		'bid_digit': 'Bid Digit',
 		'amount': 'Amount',
-		'placed_on': 'Placed On',
-		'admin_check': 'Admin Check',
 		'bid_won': 'Bid Win',
-		'admin_processed': 'Admin Processed',
-		'processed_on': 'Processed On'
+		'bid_win_amount': 'Win Amount',
+		'admin_check': 'Admin Check',
+		'admin_processed': 'Admin Processed'
 	}
 
 	def get_queryset(self):
-		return self.model.objects.filter(is_active=True).values(*self.model_data_filters)
+		return self.model.objects.filter(is_active=True, admin_processed=False).values(*self.model_data_filters)
 
 
 
@@ -312,7 +325,6 @@ class BalanceCheck(BasicListView):
 		'user': 'user',
 		'balance': 'Balance',
 		'temp_bid_balance': 'Bid Balance', 
-		'temp_trans_balance': 'Transaction Balance'
 	}
 
 
@@ -321,7 +333,8 @@ class BalanceCheck(BasicListView):
 class UserMaster(BasicListView):
 	model = MatkaUser
 	page_title = 'User Master'
-	p_keys = ['id', 'mobile']
+	order_by = 'id'
+	p_keys = ['id', 'mobile', 'username']
 	form = UserChangeForm
 	view_config = {
 		'id': '#',
@@ -338,8 +351,6 @@ class UserMaster(BasicListView):
 	def post(self, *args, **kwargs):
 		if self.request.user.is_admin :
 			inp_obj, filter_obj = self.gather_inputs(kwargs['operation'])
-			# try:
-			obj = None
 			
 			if kwargs['operation'] == 'add-new' and inp_obj['id'] == '#':
 				inp_obj['password1'] = inp_obj['unhashed_pass']	
@@ -348,25 +359,21 @@ class UserMaster(BasicListView):
 				new_user_form = UserCreationForm(inp_obj)
 				print(new_user_form)
 				if new_user_form.is_valid():
-					user = new_user_form.save()			# update_session_auth_hash(request, user)
+					user = new_user_form.save()
 					wllt = Wallet.objects.create(user=user)
 					return JsonResponse({'success': True, 'message': str(user.mobile)+ 'created successfully.'})
 
 			if kwargs['operation'] == 'update':
 				password = inp_obj['unhashed_pass']
-
-				print(password)
 				del inp_obj['unhashed_pass']
 
-				user_id = self.model.objects.filter(**filter_obj).update(**inp_obj)
-
-				user = MatkaUser.objects.get(id=user_id)
-				user.set_password(password)
-				user.unhashed_pass = password
-				print(user.password)
-				user.save()
-				if user:
-					return JsonResponse({'success': True, 'message': str(user.mobile)+ 'updated successfully.'})
+				user = self.model.objects.filter(**filter_obj).update(**inp_obj)
+				updated_user = self.model.objects.filter(**filter_obj)[0]
+				updated_user.set_password(password)
+				updated_user.unhashed_pass = password
+				updated_user.save()
+				
+				return JsonResponse({'success': True, 'message': str(updated_user)+ 'updated successfully.'})				
 			return JsonResponse({'error': 'Invalid form data!'})			
 		else:
 			return JsonResponse({'error': 'Operation not allowed!'})
@@ -376,6 +383,7 @@ class UserMaster(BasicListView):
 class BuyChips(BasicListView):
 	model = Transaction
 	page_title = 'Buy Chips'
+	order_by = '-id'
 	p_keys = ['id', 'user', 'amount']
 	view_config = {
 		'id'			: 	'#', 
@@ -395,6 +403,7 @@ class BuyChips(BasicListView):
 class SellChips(BasicListView):
 	model = Transaction
 	page_title = 'Sell Chips'
+	order_by = '-id'
 	p_keys = ['id', 'user', 'amount']
 	view_config = {
 		'id'			: 	'#', 
@@ -420,6 +429,7 @@ class SellChips(BasicListView):
 class DepositeReport(BasicListView):
 	model = Transaction
 	page_title = 'Deposite Report'
+	order_by = '-started_on'
 	p_keys = ['id', 'user', 'amount']
 	view_config = {
 		'id'			: 	'#', 
@@ -430,12 +440,12 @@ class DepositeReport(BasicListView):
 		'started_on'	: 'Started On',
 		'comleted_on'	: 'Completed On', 
 		'paid'			: 'Paid',
-		'admin_check'	: 'Admin Check', 
+		'admin_check'	: 'Admin Check',
 
 	}
 	
 	def get_queryset(self):
-		return self.model.objects.filter(transaction_type="D", admin_check=True, paid=True).values(*self.model_data_filters)
+		return self.model.objects.filter(transaction_type="D", paid=True).values(*self.model_data_filters)
 
 	def delete(self):
 		return JsonResponse({'error': 'Operation not allowed!'})
@@ -444,6 +454,7 @@ class DepositeReport(BasicListView):
 class WithdrawReport(BasicListView):
 	model = Transaction
 	page_title = 'Withdraw Report'
+	order_by = '-id'
 	p_keys = ['id', 'user', 'amount']
 	view_config = {
 		'id'			: 	'#', 
@@ -459,7 +470,7 @@ class WithdrawReport(BasicListView):
 	}
 
 	def get_queryset(self):
-		return self.model.objects.filter(transaction_type="W", admin_check=True, paid=True).values(*self.model_data_filters)
+		return self.model.objects.filter(transaction_type="W", paid=True).values(*self.model_data_filters)
 
 	def delete(self):
 		return JsonResponse({'error': 'Operation not allowed!'})

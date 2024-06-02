@@ -90,9 +90,10 @@ class RKDBet(models.Model):
 	amount = models.PositiveIntegerField()
 	admin_check = models.BooleanField(default=False)
 	bid_won = models.BooleanField(default=False)
+	bid_win_amount = models.PositiveIntegerField(default=0)
 	admin_processed = models.BooleanField(default=False)
-	placed_on = models.DateTimeField(default=datetime.datetime.now)
-	processed_on = models.DateTimeField(null=True)
+	started_on = models.DateTimeField(default=datetime.datetime.now)
+	comleted_on = models.DateTimeField(null=True)
 
 
 class Wallet(models.Model):
@@ -100,7 +101,7 @@ class Wallet(models.Model):
 	user = models.OneToOneField('MatkaUser', on_delete=models.CASCADE)
 	transactions = models.ManyToManyField('Transaction', blank=True)
 	temp_bid_balance = models.PositiveIntegerField(default=0)
-	temp_trans_balance = models.PositiveIntegerField(default=0)
+	# temp_trans_balance = models.PositiveIntegerField(default=0)
 
 	def __str__(self):
 		return f'{self.user} - {self.balance}'
@@ -111,7 +112,7 @@ class Transaction(models.Model):
 	method_name = models.CharField(max_length=100, null=True)
 	amount = models.PositiveIntegerField()
 	user = models.ForeignKey('MatkaUser', on_delete=models.CASCADE)
-	started_on = models.DateTimeField(null=True)
+	started_on = models.DateTimeField(default=datetime.datetime.now)
 	comleted_on = models.DateTimeField(null=True)
 	admin_check = models.BooleanField(default=False)
 	paid = models.BooleanField(default=False)

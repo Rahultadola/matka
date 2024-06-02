@@ -28,12 +28,16 @@ export const bet_formHandler = (ev) => {
 
 export const bid_submitHandler = (container, bets) => {
     document.getElementById('overlayContent').style.display = 'none';
-    container.innerHTML = 'Waiting for server response...'
+    container.innerHTML = 'Waiting for server response...';
 
-    const url = 'add-bid';
-    const body = { bids: bets }
-    const successHash = '#bets-page';
-    const successMessage = 'Successfully placed bids.';
-    
-    httpPostRequest(url, body, successHash, successMessage)
+    if ( bets.length > 0 ) {
+        const url = 'add-bid';
+        const body = { bids: bets }
+        const successHash = '#bets-page';
+        const successMessage = 'Successfully placed bids.';
+        
+        httpPostRequest(url, body, successHash, successMessage)
+    } else {
+        container.innerHTML = 'No bids to place.'
+    }
 }

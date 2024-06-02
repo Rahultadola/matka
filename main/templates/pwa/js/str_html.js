@@ -1,7 +1,8 @@
 let output = "";
 const game_status_slogen = ['Betting Closed for Today', 'Running for close', 'Running Now']
 
-const clock_svg = "<svg width='30' height='30' viewBox='5 10 90 70'><g stroke='#e74c3c' fill='none' stroke-width='4'><circle cx='50' cy='50' r='30'/><path d='m50,30v20h20' /><path d='m30,72l-10,10' /> <path d='m70,72l10,10' /><path d='m35,15A10,10,0,1,0,15,35z' /> <path d='m85,35A10,10,0,0,0,65,15z' /></g></svg>";
+const clock_svg = (color) => (`<svg width='40' height='40' viewBox='5 10 90 70'>
+  <g stroke=${color} fill='none' stroke-width='4'><circle cx='50' cy='50' r='30'/><path d='m50,30v20h20' /><path d='m30,72l-10,10' /> <path d='m70,72l10,10' /><path d='m35,15A10,10,0,1,0,15,35z' /> <path d='m85,35A10,10,0,0,0,65,15z' /></g></svg>`);
 const play_svg = "<svg width='30' height='30' viewBox='0 0 100 100' style='margin-right: 0.5rem'><g stroke='#fff' stroke-linejoin='round' stroke-width='4'><path d='m30, 20v60l55,-30z' fill='#fff'/></g></svg>";
 
 
@@ -35,7 +36,7 @@ export const gamePageHTML = (g, i) => (`
 					</div>
 				</div>
 			</div>
-			${clock_svg}
+			${ (g.status_open  && g.status_close) ? clock_svg('#e74c3c') : clock_svg('#3c963c') }
 			<div class="col-flx">
 				<span class="bt-title">Close</span>
 				<div class="time-cont-outer">
@@ -48,31 +49,39 @@ export const gamePageHTML = (g, i) => (`
 				</div>
 			</div>
 		</div>
-		<p style="font-size: 0.8rem;margin: 0.25rem auto;">${game_status_slogen[0]}</p>
-		<div class="card--link row-flx ${ i%2===0 ? 'link-open': 'link-close'}" data-slname="${encodeURI(g.name)}" data-slopen="${g.open_time}" data-slclose="${g.close_time}">${play_svg}<span>Play</span></div>
+		<p style="font-size: 0.8rem;margin: 0.25rem auto; color:${ (g.status_open  && g.status_close) ? '#e74c3c' : '#3c963c' };">
+      ${(g.status_open  && g.status_close) ? game_status_slogen[0] : g.status_open ? game_status_slogen[1] : game_status_slogen[2] }</p>
+		<div class="card--link row-flx ${ (g.status_open  && g.status_close) ? 'link-close' : 'link-open' }" data-slname="${encodeURI(g.name)}" data-slopen="${g.open_time}" data-slclose="${g.close_time}">${play_svg}<span>Play</span></div>
 	</div>`);
 
 export const gameTypesRateHTML = (gt) => (`
 	<div class="card">
-		<img src="${gt.img}" alt="${gt.title}"/>
+		<img src="/${gt.title.toLowerCase().split(' ').join('-')}.png" alt="${gt.title}" style="width: auto; max-width: 3rem; height: auto; max-height: 3rem;" />
 		<h3 style="color:#000088">${gt.title}</h3>
-		<span>${gt.unitBetAmount} ⟶ ${gt.winAmount}</span>
+		<span>${gt.unit_bet_amount} ⟶ ${gt.win_amount}</span>
 	</div>`)
 
 
-export const bet_pageHTML = (g) => ( `
-	<div class="card">
-		<h6 class="card--title">${g.bid_type}</h6>
-		<h4 class="card--avatar">${g.bid_digit}</h4>
-		<h3>${g.game}</h3>
-		<h4 class="">${g.time_start}</h4>
-		<h3>${g.time_update}</h3>
-		<span>Active : ${g.verified}</span>
-		<span>Won : ${g.is_win}</span>
-		<span>Paid : ${g.paid}</span>
+export const bidHistoryHTML = (g) => ( `
+	<div class="card" style="flex-direction: row; width: 90%; justify-content: space-between; align-items: center;">
+		<h5>${g.game}</h5>
+		<h5>${g.bid_type}</h5>
+		<h4 class="card--title" style="margin-top:0">${g.bid_digit}</h4>
+		<span>&#x20b9; ${g.amount}</span>
 	</div>
 `);
 
+
+export const win_betHTML = (g) => ( `
+  <div class="card" style="flex-direction: row; width: 90%; justify-content: space-between; align-items: center;">
+    <h5>${g.game}</h5>
+    <h5>${g.bid_type}</h5>
+    <h4 class="card--title" style="margin-top:0">${g.bid_digit}</h4>
+    <span>&#x20b9;${g.amount} --> &#x20b9;${g.win_amount}</span>
+    <span>${g.is_verified ? 'seen': 'unseen'}</span>
+    <span>${g.is_paid ? 'paid': 'unpaid'}</span>
+  </div>
+`);
 
 
 export const transaction_HTML = (g, i) => (
@@ -87,28 +96,25 @@ export const transaction_HTML = (g, i) => (
 	      </div>
       `)
 
-export const transactionEntryHTML = (tr) => (`<div class="card" style="width: 50%; min-width: 20rem; flex-direction: row">
+export const transactionEntryHTML = (tr) => (`<div class="card" style="width: 50%; min-width: 20rem; flex-direction: row; justify-content: space-between;">
     <div style="display:flex; flex-direction: column;align-items:center; justify-content: space-between">
       <span>Amount</span>
       <h3>&#x20b9; ${tr.amount}</h3>
     </div>
     <div style="display:flex; flex-direction: column; align-items:center">
-    	<div>
-    		<span>${tr.tr_type === 'D'? 'Deposite': 'Withdraw'} request</span>
-    		<span>is ${tr.is_paid ? 'paid' : 'unpaid'} ${tr.comleted_on ? 'on'+ tr.comleted_on.toString() : ''}</span>
-    	</div>
-	    <div>
-	      ${tr.is_paid ? `<span>via ${tr.method}</span>` : '<a href="upi://pay?pa=UPIID@oksbi&amp;pn=FNAME SNAME&amp;cu="INR">Pay Now !</a>'} </span>
-	            
-	    </div>
+    	<span>Request is ${tr.is_paid ? 'paid' : 'unpaid'}</span>
+    	<span> ${tr.comleted_on ? 'on'+ tr.comleted_on.toString() : ''}</span>
+    	
+      ${tr.is_paid ? `<span>via ${tr.method}</span>` : tr.transaction_type === 'D' ? `<a class="pay-btn" href="upi://pay?pa=depp25johnny@oksbi&amp;pn=RAHUL TADOLA&amp;am=${tr.amount}&amp;cu=INR">Pay Now !</a>` : '' } </span>
+	    
 	</div>
     <div>
-      <span>${tr.verified ? 'Admin Verified': 'Waiting...'}</span>
+      <span>${tr.verified ? 'Admin Verified': 'processing...'}</span>
     </div>
   </div>`);
 
 
-export const bet_formHTML = (bets, game, bet_type, wallet_balance) => {
+export const bet_formHTML = (bets, game, bet_type, wallet_balance, canBidOpen, canBidClose) => {
 	let btRows = '';
 
 	for (let bt of bets){
@@ -123,34 +129,35 @@ export const bet_formHTML = (bets, game, bet_type, wallet_balance) => {
 	}
 
 	return (`
-    <form id="bet-form" style="width: 50%;  min-width: 20rem;">
+    ${ canBidOpen || canBidClose ? `<form id="bet-form" style="width: 50%;  min-width: 20rem;">
       <input type="hidden" name="game" value="${game}"  />
       <h4 >${bet_type.title}</h4> <input type="hidden" name="bidType" value="${encodeURI(bet_type.title)}" />
       
-	  <fieldset class="inputs" style="flex-direction:row">
-	    <p>Game Type :</p>
-    	<div>
-    		<div style="width: 100%; display: flex; align-items: center;">
-    			<input type="radio" id="gtChoice1" name="gameType" value="open" checked /> 
-    			<label for="gtChoice1">Open</label>
-    		</div>
-		    <div style="width: 100%; display: flex; align-items: center;">
-		    	<input type="radio" id="gtChoice2" name="gameType" value="close" /> 
-		    	<label for="gtChoice2">Close</label>
-		    </div>
-		</div>
-	  </fieldset>
+    <fieldset class="inputs" style="flex-direction:row">
+      <p>Game Type :</p>
+      <div>
+        <div style="width: 100%; display: flex; align-items: center;">
+          <input type="radio" id="gtChoice1" name="gameType" value="open" ${ canBidOpen ? 'checked' : 'disabled' } /> 
+          <label for="gtChoice1">Open</label>
+        </div>
+        <div style="width: 100%; display: flex; align-items: center;">
+          <input type="radio" id="gtChoice2" name="gameType" value="close" ${ canBidClose ? (canBidOpen ? '' : 'checked') : 'disabled' }/> 
+          <label for="gtChoice2">Close</label>
+        </div>
+    </div>
+    </fieldset>
    
       <div class="inputs bet-inputs">
-      	<label>Digit</label>
-      	<input name="digit" type="number" min=0 max=${ Math.pow(10, bet_type.digit_count) - 1 } style="width: 75%; text-align: center"/>
+        <label>Digit</label>
+        <input name="digit" type="number" min=0 max=${ Math.pow(10, bet_type.digit_count) - 1 } style="width: 75%; text-align: center"/>
       </div>
       <div class="inputs bet-inputs">
-      	<label>Token</label>
-      	<input name="amount" type="number" style="width: 75%; text-align:center" min=10 max=${wallet_balance} />
+        <label>Token</label>
+        <input name="amount" type="number" style="width: 75%; text-align:center" min=10 max=${wallet_balance} />
       </div>
       <input style="margin:auto" class="form-submit" type=submit value="Add Bid" />
-    </form>
+    </form>` : ''}
+    
     <table id="bet-list">
       <thead class="bet-col-title">
       	<th>Game</th>
@@ -168,8 +175,8 @@ export const bet_formHTML = (bets, game, bet_type, wallet_balance) => {
   `)};
 
 
-export const fundOptionHTML = (opt) => (`<div class="card" style="flex-direction: row; width: 90%; justify-content: space-between; align-items: center;">
-	<img src="" alt="${opt.title.split(' ').map((s) => s[0]).join('')}" style="width: 3rem; height: 3rem; overflow: hidden;  background-color: #423f3f;"/>
+export const fundOptionHTML = (opt) => (`<div class="card" style="flex-direction: row; width: 90%; justify-content: space-evenly; align-items: center;">
+	<img src="${opt.img}" alt="${opt.title.split(' ').map((s) => s[0]).join('')}" style="height: auto; max-height: 2rem; width: auto; max-width: 2rem"/>
 	<div style="display: flex; justify-content: space-between; width: 85%; margin-left: 0.5rem; align-items: center;">
 		<div style="text-align: start;">
 			<h4>${opt.title}</h4>
@@ -187,12 +194,12 @@ export const money_formHTML = (reqType) =>`
         	id="amount" 
         	name="amount" 
         	type="number" 
-        	placeholder="${reqType === 'deposite'? 500 : 1000 }" 
-        	min="${reqType === 'deposite'? 500 : 1000 }"   
-        	max="${reqType === 'deposite'? 10000000 : 25000}"  />
+        	placeholder="${reqType === 'deposite'? 100 : 500 }" 
+        	min="${reqType === 'deposite'? 100 : 500 }"   
+        	max="${reqType === 'deposite'? 10000000 : 5000}"  />
     </div>
     <div>
-        <input style="width:auto" class="form-submit" type='submit' value="ADD" />
+        <input style="width:auto" class="form-submit" type='submit' value="Submit" />
     </div>
 `;
 
@@ -319,7 +326,7 @@ export const sideNavigationHTML = `<div class="nav-content">
           </a>        
           <ul class="nav-menu">
             <li><a href="/#khabar-page"><img /><span class="nav_title">Home</span></a></li>
-            <li><a href="/#bets-page"><img /><span class="nav_title">Bid History</span></a></li>
+            <li><a href="/#bid-history-page"><img /><span class="nav_title">Bid History</span></a></li>
             <li><a href="/#win-history-page"><img /><span class="nav_title">Win History</span></a></li>
             <li><a href="/#funds-page"><img /><span class="nav_title">Funds</span></a></li>
             <li><a href="/#rules-page"><img /><span class="nav_title">Rules & Regulations</span></a></li>
@@ -334,7 +341,7 @@ export const sideNavigationHTML = `<div class="nav-content">
         <div id="close-side-nav"></div>`;
 
 export const footerHTML = `
-        <a href="/#bets-page" class="footer-links">
+        <a href="/#bid-history-page" class="footer-links">
           <svg class="footer-svg" viewBox="0 0 100 100">
                   <g stroke="#d4cbc7" fill="#d4cbc7">
                     <!-- thumb -->
@@ -382,20 +389,10 @@ export const footerHTML = `
                   </g>
           </svg>
           <span>Game Rates</span>
-        </div>
-        <a href="/#khabar-page" id="homeBtn" class="footer-home"><!--path d="M 20,80 
-                            v-40 
-                            c-5,5,-10,0,-5,-5 
-                            l35,-30
-                            l35,30
-                            c5, 5, 0,10, -5, 5
-                     v 40 h-20  v -30 h-20 v 30 z" /-->
-          <svg width="35" height="35" viewBox="0 0 100 90">
-                  <g stroke="#1e1a1a" fill="#1e1a1a">
-                  <text stroke-width="5" font-size="50" x="12.5" y="65">-rt-</text>
-                   
-          </svg>
-        </div>
+        </a>
+        <a href="/#khabar-page" id="homeBtn" class="footer-home">
+          <img src="logo-72x72.png" style="width:auto;max-width:35px;transform:translateY(2px)"/>
+        </a>
         <a href="/#funds-page" class="footer-links">        
           <svg class="footer-svg" viewBox="0 0 100 100">
                   <g stroke="#d4cbc7" fill="#d4cbc7" stroke-width="1">
@@ -426,3 +423,20 @@ export const footerHTML = `
           </svg>
           <span>Account</span>
         </a>`;
+
+
+
+
+
+
+
+
+
+
+
+        // <!--path d="M 20,80 v-40 c-5,5,-10,0,-5,-5 l35,-30 l35,30 c5, 5, 0,10, -5, 5 v 40 h-20  v -30 h-20 v 30 z" /-->
+        //   <svg width="35" height="35" viewBox="0 0 100 90">
+        //           <g stroke="#1e1a1a" fill="#1e1a1a">
+        //           <text stroke-width="5" font-size="50" x="12.5" y="65">-rt-</text>
+                   
+        //   </svg>

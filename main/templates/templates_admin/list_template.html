@@ -38,6 +38,24 @@
     .update-btn { background-color: #0000ff99; }
     .pagination { width: fit-content; margin: auto; padding: 0.5rem;}
 
+    .dialog-box {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #000a;
+    }
+
+    #dial-no, #dial-yes {
+        margin: 0.5rem;
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 0.5rem;
+        color: aliceblue;
+    }
 </style>
 {% endblock custom_css %}
 
@@ -153,9 +171,16 @@
             
             function generateForm(formItems, formType='new', data=[]) {
                 return (`<td>${data.length > 0 ? data[0] : formItems[0]}</td>
-                    ${ formItems.slice(1, formItems.length-1).map((hd, ind) => `<td>
-                        <input style="width: 100px;" value="${ ind < data.length ? data[ind + 1] : ''}" />
-                    </td>`).join('') }
+                    ${ formItems.slice(1, formItems.length-1).map((hd, ind) => (
+                        `<td>
+                            ${
+                                data[ind + 1] === "False" || data[ind + 1] === "True" ? 
+                                `<input type='checkbox' ${ data[ind + 1] === "True" ? 'checked' : '' }/>` : 
+                                `<input style="width: 100px;" value="${ ind < data.length ? data[ind + 1] : ''}" />` 
+                            }
+                            
+                        
+                        </td>`)).join('') }
                     <td><input id="${formType}ItemForm"  type="submit" value="${ formType === 'new' ? 'Add': 'Update'}"/></td>
                 `);
             }
@@ -166,7 +191,18 @@
                     const inputKeys = getTableInputKeys(targetTable)
                     console.log(inputKeys)
                     const formItems = Array.from(ev.target.parentElement.parentElement.children)
-                    const inputValues = formItems.slice(1, formItems.length -1).map((td) => td.children[0].value)
+                    const inputValues = formItems.slice(1, formItems.length -1).map((td) => {
+                        if (td.children[0].type === 'checkbox') {
+                            if( td.children[0].checked ) {
+                                return true;
+                            } else {
+                                return false;
+                            }
+                        }                            
+                        return td.children[0].value;
+                    })
+
+                    console.log(inputValues)
                     
                     var formBody = { id: formItems[0].innerHTML }
                     for (let index in inputKeys) {
@@ -199,9 +235,32 @@
 
             document.querySelectorAll('.delete-btn').forEach((btn) => {
                 btn.addEventListener('click', (ev) => {
-                    console.log('delete-btn Clicked!');
-                    const rowID = ev.target.parentElement.parentElement.children[0].innerHTML                                    
-                    fetchServer('DELETE', 'delete', { id: rowID }) 
+                    const rowID = ev.target.parentElement.parentElement.children[0].innerHTML;
+                    const container = document.querySelector('body');
+
+                    const dialogBox = document.createElement('div');
+                    dialogBox.className = 'dialog-box';
+
+                    dialogBox.innerHTML = `<div style="padding: 2rem; background-color: aliceblue; border-radius: 1rem;">
+                        <h2>Are you sure?</h2>
+                        <div style="display: flex;  justify-content: center;  align-items: center;">
+                            <button id="dial-yes" style="background-color: #3a3;">Yes</button>
+                            <button id="dial-no" style="background-color: #a33;">No</button>
+                        </div>
+                    </div>`;
+
+                    container.append(dialogBox);
+
+                    document.querySelector('#dial-yes').addEventListener('click', (ev) => {
+                        container.removeChild(dialogBox);
+                        fetchServer('DELETE', 'delete', { id: rowID }) 
+                    });
+
+                    document.querySelector('#dial-no').addEventListener('click', (ev) => {
+                        container.removeChild(dialogBox);
+                    });
+
+                    
                 })
             })
 

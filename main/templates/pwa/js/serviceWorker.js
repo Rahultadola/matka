@@ -1,7 +1,6 @@
 const matka = "matka-v4"
 const assets = [
   "/",
-  // "/index.html",
   "/style.css",
   "/app.js",
   "/d.js",
@@ -29,3 +28,11 @@ self.addEventListener("fetch", fetchEvent => {
     })
   )
 })
+
+
+self.addEventListener("push", pushEvent => {
+  const payload = pushEvent.data?.text() ?? "no payload";
+  pushEvent.waitUntil(
+    self.registration.showNotification(payload.title, { body: payload.content })
+  );
+});

@@ -1,6 +1,5 @@
 import {
   gtInterval,
-  initBetsPage, 
   initRulePage,
   initGamesPage,
   initFundsPage,
@@ -9,6 +8,7 @@ import {
   initGameRatesPage,
   initChangePassword,
   initBetFormHandler,
+  initBidHistoryPage, 
   initWinHistoryPage,
   initFundRequestPage,
   initBankDetailsPage,
@@ -20,34 +20,34 @@ import { initRegisterPage, loginHandler } from './login-register.js';
 import { 
   addFooter,
   toggleHeader,
+  handleLayouts,
   footerToggler,
   navLinkDecoration, 
   addNavEventHandlers, 
   containerOverlayToggler, 
 } from './layout.js';
 
+import { getCookie } from './http-request.js';
 
-
-var isUserLoggedin = false;
-var userDetails = 'anonymus-user';
 
 const bets = [];
 
 
 export const setLogin = (b, user) => {
-  isUserLoggedin = b;
   if (b) {
-    userDetails = user;
+    localStorage.setItem('isUserLoggedin', b)
+    localStorage.setItem('appData', JSON.stringify(user))
     window.location.hash = '#khabar-page'
   } else {
-    window.location.hash = ''
+    alert('Error Login!')
+    window.location.href = '/';
   }  
 };
 
 const setLogout = () => {
-  isUserLoggedin = false;
-  userDetails = 'anonymus-user';
-  window.location.href = '/'
+  localStorage.setItem('isUserLoggedin', false)
+  localStorage.setItem('appData', undefined)
+  window.location.href = '/';
 }
 
 
@@ -61,16 +61,17 @@ const logoutHandler = () => {
 
 function errorHandler() {
   const container = document.querySelector(".container")
-  container.innerHTML = "<h2 style='color:red'>Error occured.</h2>"
+  container.innerHTML = "<h2 style='color:red'>Error occured.</h2>";
+  setTimeout(() => {
+    window.location.location = '';
+  }, 2000)
 }
-
-
 
 
 const updateUserData = (mobile) => {
   return fetch(`/user-details/`).then((res) => res.json()).then((response) => {
-    userDetails = res
-  }).catch(err => err)
+    localStorage.setItem('appData', JSON.stringify(response))
+  }).catch(err => alert(err))
 }
 
 const addRefreshBtn = () => {
@@ -118,40 +119,6 @@ const addRefreshBtn = () => {
       }, 1)
 
     }, 1000)
-
-
-
-
-
-
-    /// Animation Start here    
-
-    // rfBtn.style.transitionDuration = '1s';
-    // rfBtn.style.transform = 'rotate(360deg)';
-    // rfBtn.style.borderWidth = '10px';
-                                                                
-    // setTimeout(() => {
-    //   rfBtn.style.transitionDuration = '0s';
-    //   rfBtn.style.transform = 'rotate(0deg)';
-    //   rfBtn.style.borderWidth = '10px';
-
-    //   setTimeout(() => {
-    //     rfBtn.style.transitionDuration = '1s';
-    //     rfBtn.style.transform = 'rotate(1080deg)';
-    //     rfBtn.style.borderWidth = '0px';
-        
-
-    //     setTimeout(() => {
-    //       rfBtn.style.transitionDuration = '0s';     
-    //       rfBtn.style.transform = 'rotate(0deg)';
-    //       rfBtn.style.borderWidth = '0px';
-          
-    //     }, 1000)
-
-    //   }, 1)
-
-    // }, 1000)
-    /// Animation code end here
   }
 
   rfBtn.addEventListener('click', (ev) => {
@@ -159,33 +126,44 @@ const addRefreshBtn = () => {
 
     if (!refInterval) {
       refInterval = setInterval(() => {
-        refAnimation();
-      }, 2110)//2120
+        refAnimation(); //2120
+      }, 2110)
     }
-
-    
-    updateUserData(userDetails.user.mobile).then(() => {
+    const mobNumber = JSON.parse(localStorage.getItem('appData')).user.mobile;
+    updateUserData(mobNumber).then(() => {
       clearInterval(refInterval);
       refInterval = undefined;
       const currHash = window.location.hash;
       window.location.hash = '';
       window.location.hash = currHash;
     })
-  
-
   });
+
 };
 
 
 const routerHandler = () => {
   const hash = location.hash;
   navLinkDecoration();
-  
-  if (isUserLoggedin && userDetails != 'anonymus-user') {   
-    toggleHeader(userDetails.bid_details.wallet_balance, userDetails.admin)
+
+  var isLogedIn = localStorage.getItem('isUserLoggedin')
+  isLogedIn = isLogedIn === 'false' ? false : true;
+
+  var appData = localStorage.getItem('appData');
+  appData = appData === 'undefined' ? undefined : appData;
+
+  console.log(isLogedIn, appData)
+  if (isLogedIn && appData != undefined) {
+    const appContext = JSON.parse(localStorage.getItem('appData'))
+
+    if(!document.querySelector('header').contains(document.getElementById('login-user-header'))) {
+      toggleHeader()
+    }
+    document.getElementById('wallet-balance').innerHTML = `${appContext.wallet.temp_bid_balance}`;
+    handleLayouts(appContext.admin)
     
     if (!document.querySelector('main').contains(document.getElementById('side_nav'))) {
-      addNavEventHandlers(userDetails.user.mobile);
+      addNavEventHandlers(appContext.user.mobile);
     } else {
       document.getElementById('close-side-nav').click();
     }
@@ -212,51 +190,49 @@ const routerHandler = () => {
     }
 
     if (hash === '#khabar-page') {
-      initGamesPage(userDetails.star_line_today, userDetails.bet_types, userDetails.admin);
-    } else if (hash === '#bets-page') {
-      initBetsPage(userDetails.user, userDetails.bid_details);
+      initGamesPage(appContext.star_line_today, appContext.bet_types, appContext.admin);
+    } else if (hash.slice(0,9) === '#bet-form') {
+      initBetFormHandler(bets, appContext.user, appContext.wallet.temp_bid_balance, appContext.bet_types, appContext.star_line_today);
+    } else if (hash === '#bid-history-page') {
+      initBidHistoryPage(appContext.user, appContext.bids);
     } else if (hash === '#win-history-page') {
-      initWinHistoryPage(userDetails.won_bets);
+      initWinHistoryPage(appContext.won_bets);
     } else if (hash.slice(0,11) === '#funds-page') {
-
       const queryString = window.location.hash.split('?');
 
       if (queryString[0].length > 0 && queryString[1]) {
         const query = queryString[1].split('=')[1].trim();
 
         if (query === 'deposite-fund') {
-          initFundRequestPage('deposite', userDetails.transaction_details.total_amount)
+          initFundRequestPage('deposite', appContext.wallet.temp_bid_balance)
         } else if (query === 'withdraw-fund') {
-          initFundRequestPage('withdraw', userDetails.bid_details.wallet_balance) 
+          initFundRequestPage('withdraw', appContext.wallet.temp_bid_balance) 
         } else if (query === 'deposite-history') {
-          initFundHistoryPage('d', userDetails.transaction_details.deposite_transactions)
+          initFundHistoryPage('d', appContext.transactions.deposite_transactions)
         } else if (query === 'withdraw-history') {
-          initFundHistoryPage('w', userDetails.transaction_details.withdraw_transactions)
+          initFundHistoryPage('w', appContext.transactions.withdraw_transactions)
         } else if (query === 'add-bankdetails') {
           initBankDetailsPage()
         }
 
       } else {
-        initFundsPage();
+        initFundsPage(appContext.wallet.temp_bid_balance);
       }
 
     } else if (hash === '#profile-page') {
-      initProfilePage(userDetails.user);
+      initProfilePage(appContext.user);
     } else if (hash === '#logout' ){
       logoutHandler(setLogin)
-    } else if (hash.slice(0,9) === '#bet-form') {
-      initBetFormHandler(bets, userDetails.user, userDetails.bid_details.wallet_balance, userDetails.bet_types);
     } else if (hash === '#rules-page' ){
       initRulePage()
     } else if (hash === '#game-rates-page') {
-      initGameRatesPage(userDetails.bet_types)
+      initGameRatesPage(appContext.bet_types)
     } else if (hash === '#settings-page') {
-      initSettingPage(userDetails.user.notifications)
+      initSettingPage(appContext.user.notifications)
     } else if (hash === '#change-password') {
       initChangePassword()
     } else { // on error we will redirect to home page
-      initGamesPage(userDetails.star_line_today, userDetails.bet_types, userDetails.admin);
-      alert("Error  occurred!")
+      window.location.hash = '#khabar-page'
     }
   } else {
 
@@ -266,9 +242,8 @@ const routerHandler = () => {
 
     } else if (hash === '' || hash === '#login-page'){
       loginHandler()      
-    } else if (hash[0] === '?'){
-      errorHandler()
     } else {
+      errorHandler()
       console.log(window.location.hash, ' Unavailable')
     }
   }
@@ -281,14 +256,36 @@ window.addEventListener('load', routerHandler)
 window.addEventListener('hashchange', routerHandler)
 
 
+// This function is needed because Chrome doesn't accept a base64 encoded string
+// as value for applicationServerKey in pushManager.subscribe yet
+function urlBase64ToUint8Array(base64String) {
+  var padding = '='.repeat((4 - base64String.length % 4) % 4);
+  var base64 = (base64String + padding)
+    .replace(/\-/g, '+')
+    .replace(/_/g, '/');
+ 
+  var rawData = window.atob(base64);
+  var outputArray = new Uint8Array(rawData.length);
+ 
+  for (var i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
+
+
+
+
 if ("serviceWorker" in navigator) {
   function install_worker() {
     navigator.serviceWorker.getRegistrations().then(registrations => {
       if (registrations.length === 0) {
         navigator.serviceWorker
           .register("/serviceWorker.js")
-          .then(res => console.log("matka worker registered"))
-          .catch(err => console.log("matka worker not registered", err))
+          .then((registration) => {
+            console.log("matka worker registered");
+          }).catch(err => console.log("matka worker not registered", err))
       } 
     })
   }
