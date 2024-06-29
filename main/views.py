@@ -16,34 +16,22 @@ from django.contrib.auth.decorators import login_required
 # Create your views here.
 
 
-def home(request, file_name=''):
-	if file_name == '':
-		return render(request, 'pwa/index.html', {})
-	else:
-		file=None
-		
-		if '.css' in file_name:
-			file = finders.find('css/'+file_name)
-		if '.js' in file_name:
-			file = finders.find('js/'+file_name)
-		if '.html' in file_name or '.json' in file_name:
-			file = finders.find(file_name)
-		if '.jpeg' in file_name or '.png' in file_name:
-			file = finders.find('images/'+file_name)
-		if '.png' in file_name and 'logo' in file_name:
-			file = finders.find('images/icons/'+file_name)
-		if 'crown.png' in file_name:
-			file = finders.find('images/'+file_name)
-		try:
-			return FileResponse(open(file, 'rb'))
-		except:
-			return JsonResponse({'error': 'File not found'})
+# Create your views here.
 
-
+def home(request):
+    try:
+        admin = MatkaAdmin.objects.get(active_account=True)
+    except:
+        class adm():
+            whatsapp = '7869997682'
+            short_name = 'admin-rt-'
+        admin = adm()
+    return render(request, 'pwa/index.html', { 'admin_mobile': admin.whatsapp,	'admin_name': admin.short_name })
 
 
 def notification_public_key(request):
 	return JsonResponse({'public_key': 'e3s2434353drew34342322433f4d33sr4d3'})
+
 
 registered_applications = []
 def notification_register(request):
@@ -58,9 +46,10 @@ def send_notification(request):
 	subscription = json.loads(request.body)
 	print('send-noti-api : ', subscription)
 	return JsonResponse({
-		'title': 'Latest news Noti SUCCESS!', 
-		'content' : 'Noti success in application, yes you did it.'  
+		'title': 'Latest news Noti SUCCESS!',
+		'content' : 'Noti success in application, yes you did it.'
 	})
+
 
 
 
